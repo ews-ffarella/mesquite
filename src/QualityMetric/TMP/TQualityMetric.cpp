@@ -99,7 +99,8 @@ bool TQualityMetric::evaluate_internal( PatchData& pd,
       std::cerr << "[MQ_DEBUG] this=" << static_cast<const void*>(this)
                 << " targetCalc=" << static_cast<const void*>(targetCalc)
                 << " targetMetric=" << static_cast<const void*>(targetMetric)
-                << " handle=" << handle << " elem=" << e << " sample=" << s << " A=\n" << A << "\n";
+                << " handle=" << handle << " elem=" << e << " sample=" << s << " num_idx=" << num_indices
+                << " A=\n" << A << "\n";
       std::cerr << "[MQ_DEBUG] this=" << static_cast<const void*>(this)
                 << " targetCalc=" << static_cast<const void*>(targetCalc)
                 << " targetMetric=" << static_cast<const void*>(targetMetric)
@@ -113,13 +114,18 @@ bool TQualityMetric::evaluate_internal( PatchData& pd,
                 << " targetMetric=" << static_cast<const void*>(targetMetric)
                 << " handle=" << handle << " elem=" << e << " sample=" << s << " T=A*inv(W)=\n" << T << "\n";
       /* also emit via fprintf to avoid iostream redirection */
-      ::fprintf(stderr, "[MQ_DEBUG-F] this=%p targetCalc=%p targetMetric=%p handle=%zu elem=%zu sample=%zu A=\n",
-                static_cast<const void*>(this), static_cast<const void*>(targetCalc), static_cast<const void*>(targetMetric), handle, e, s);
+      ::fprintf(stderr, "[MQ_DEBUG-F] this=%p targetCalc=%p targetMetric=%p handle=%zu elem=%zu sample=%zu num_idx=%zu A=\n",
+                static_cast<const void*>(this), static_cast<const void*>(targetCalc), static_cast<const void*>(targetMetric), handle, e, s, num_indices);
       ::fflush(stderr);
       std::cerr << "[TQMT_DEBUG] this=" << static_cast<const void*>(this)
                 << " targetCalc=" << static_cast<const void*>(targetCalc)
                 << " targetMetric=" << static_cast<const void*>(targetMetric)
-                << " handle=" << handle << " sample=" << s << " A=" << A << " W=" << W << " Winv=" << Winv << " T=" << T << std::endl;
+                << " handle=" << handle << " sample=" << s << " num_idx=" << num_indices << " A=" << A << " W=" << W << " Winv=" << Winv << " T=" << T << std::endl;
+
+      /* print the mIndices array used by the mapping function to help correlate vertex ordering */
+      std::cerr << "[MQ_DEBUG] mIndices:";
+      for (size_t ii = 0; ii < num_indices; ++ii) std::cerr << ' ' << mIndices[ii];
+      std::cerr << "\n";
     }
   }
   else if (edim == 2) {
