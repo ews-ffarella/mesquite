@@ -329,6 +329,9 @@ void TMPQualityMetric::weight( PatchData& pd,
     return;
   
   double ck = weightCalc->get_weight( pd, elem, sample, err ); MSQ_ERRRTN(err);
+  if (std::getenv("ABL_MQ_DEBUG")) {
+    std::cerr << "[TMP_WT] elem=" << elem << " weight=" << ck << " before_value=" << value << "\n";
+  }
   value *= ck;
   if (grad) {
     for (int i = 0; i < num_idx; ++i)
