@@ -63,6 +63,8 @@ namespace MESQUITE_NS
 //********* Functions that are NOT inherited ************
 
     MeshImpl();
+    MeshImpl(const MeshImpl&) = delete;
+    MeshImpl& operator=(const MeshImpl&) = delete;
     
     virtual ~MeshImpl();
 
