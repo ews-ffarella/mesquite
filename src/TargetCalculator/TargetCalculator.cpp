@@ -37,6 +37,7 @@
 #include "ReferenceMesh.hpp"
 #include "MappingFunction.hpp"
 #include <assert.h>
+#include <iostream>
 
 namespace MESQUITE_NS {
 
@@ -538,14 +539,54 @@ void TargetCalculator::jacobian_3D( PatchData& pd,
   size_t indices[MAX_NODES], n;
   MsqVector<3> derivs[MAX_NODES];
   mf->derivatives( location, bits, indices, derivs, n, err ); MSQ_ERRRTN(err);
+
+  /* Convert derivative indices (which are returned in the mapping-function's
+     canonical node ordering) to the ordering of the coords[] array passed
+     into this function.  This mirrors the behavior used in the
+     MappingFunction::jacobian / JacobianCalculator implementations. */
+  // FIXME: EWS Edit (removed)
+  // mf->convert_connectivity_indices( num_nodes, indices, n, err ); MSQ_ERRRTN(err);
+
+  // Env-gated tracing: print coords[], converted indices and derivs so we can
+  // verify the mapping between coords[] ordering and mapping-function indices
+  const char* jac_trace = std::getenv("ABL_JAC_TRACE");
+  if (jac_trace && jac_trace[0] != '\0') {
+    std::cerr << "[TargetCalculator::jacobian_3D TRACE] num_nodes=" << num_nodes << " n=" << n << "\n";
+    std::cerr << " coords[]:\n";
+    for (int i = 0; i < num_nodes; ++i) {
+      const Vector3D& c = coords[i];
+      std::cerr << "  coords[" << i << "] = (" << c.x() << ", " << c.y() << ", " << c.z() << ")\n";
+    }
+    std::cerr << " indices (converted): ";
+    for (size_t i = 0; i < n; ++i) std::cerr << indices[i] << (i+1<n?",":"");
+    std::cerr << "\n derivs:\n";
+    for (size_t i = 0; i < n; ++i) {
+      std::cerr << "  deriv[" << i << "] = (" << derivs[i][0] << ", " << derivs[i][1] << ", " << derivs[i][2] << ")\n";
+    }
+  }
   
     // calculate Jacobian
   assert(sizeof(Vector3D) == sizeof(MsqVector<3>));
   const MsqVector<3>* verts = reinterpret_cast<const MsqVector<3>*>(coords);
   assert(n > 0);
+  // Assemble Jacobian from outer products of vertex positions and derivative
+  // coefficients. When tracing is enabled, also print each term so we can
+  // inspect how individual contributions combine to form J.
   J = outer( verts[indices[0]], derivs[0]  );
-  for (size_t i = 1; i < n; ++i) 
-    J += outer( verts[indices[i]], derivs[i] );
+  const char* jac_trace_terms = std::getenv("ABL_JAC_TRACE");
+  if (jac_trace_terms && jac_trace_terms[0] != '\0') {
+    std::cerr << "[TargetCalculator::jacobian_3D TRACE] term[0] (idx=" << indices[0] << ") = outer(verts[idx], deriv) =\n";
+    MsqMatrix<3,3> term0 = outer( verts[indices[0]], derivs[0] );
+    std::cerr << term0 << "\n";
+  }
+  for (size_t i = 1; i < n; ++i) {
+    MsqMatrix<3,3> term = outer( verts[indices[i]], derivs[i] );
+    if (jac_trace_terms && jac_trace_terms[0] != '\0') {
+      std::cerr << "[TargetCalculator::jacobian_3D TRACE] term[" << i << "] (idx=" << indices[i] << ") =\n";
+      std::cerr << term << "\n";
+    }
+    J += term;
+  }
 }
 
 void TargetCalculator::jacobian_2D( PatchData& pd,
@@ -570,12 +611,13 @@ void TargetCalculator::jacobian_2D( PatchData& pd,
   size_t indices[MAX_NODES], n;
   MsqVector<2> derivs[MAX_NODES];
   mf->derivatives( location, bits, indices, derivs, n, err ); MSQ_ERRRTN(err);
-  
+  mf->convert_connectivity_indices( num_nodes, indices, n, err ); MSQ_ERRRTN(err);
+
     // calculate Jacobian
   assert(sizeof(Vector3D) == sizeof(MsqVector<3>));
   const MsqVector<3>* verts = reinterpret_cast<const MsqVector<3>*>(coords);
   assert(n > 0);
-  J = outer( verts[indices[0]], derivs[0] );
+  J = outer( verts[indices[0]], derivs[0]  );
   for (size_t i = 1; i < n; ++i) 
     J += outer( verts[indices[i]], derivs[i] );
 }
