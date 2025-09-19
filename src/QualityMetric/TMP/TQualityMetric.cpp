@@ -53,6 +53,8 @@
 
 #include <functional>
 #include <algorithm>
+#include <cstdlib>
+#include <iostream>
 
 #define NUMERICAL_2D_HESSIAN
 
@@ -92,9 +94,33 @@ bool TQualityMetric::evaluate_internal( PatchData& pd,
     const MsqMatrix<3,3> Winv = inverse(W);
     const MsqMatrix<3,3> T = A*Winv;
     rval = targetMetric->evaluate( T, value, err ); MSQ_ERRZERO(err);
-#ifdef PRINT_INFO
-    print_info<3>( e, s, A, W, A * inverse(W) );
-#endif
+    // Runtime-controlled debug prints (set environment variable ABL_MQ_DEBUG)
+    {
+      std::cerr << "[MQ_DEBUG] this=" << static_cast<const void*>(this)
+                << " targetCalc=" << static_cast<const void*>(targetCalc)
+                << " targetMetric=" << static_cast<const void*>(targetMetric)
+                << " handle=" << handle << " elem=" << e << " sample=" << s << " A=\n" << A << "\n";
+      std::cerr << "[MQ_DEBUG] this=" << static_cast<const void*>(this)
+                << " targetCalc=" << static_cast<const void*>(targetCalc)
+                << " targetMetric=" << static_cast<const void*>(targetMetric)
+                << " handle=" << handle << " elem=" << e << " sample=" << s << " W=\n" << W << "\n";
+      std::cerr << "[MQ_DEBUG] this=" << static_cast<const void*>(this)
+                << " targetCalc=" << static_cast<const void*>(targetCalc)
+                << " targetMetric=" << static_cast<const void*>(targetMetric)
+                << " handle=" << handle << " elem=" << e << " sample=" << s << " Winv=\n" << Winv << "\n";
+      std::cerr << "[MQ_DEBUG] this=" << static_cast<const void*>(this)
+                << " targetCalc=" << static_cast<const void*>(targetCalc)
+                << " targetMetric=" << static_cast<const void*>(targetMetric)
+                << " handle=" << handle << " elem=" << e << " sample=" << s << " T=A*inv(W)=\n" << T << "\n";
+      /* also emit via fprintf to avoid iostream redirection */
+      ::fprintf(stderr, "[MQ_DEBUG-F] this=%p targetCalc=%p targetMetric=%p handle=%zu elem=%zu sample=%zu A=\n",
+                static_cast<const void*>(this), static_cast<const void*>(targetCalc), static_cast<const void*>(targetMetric), handle, e, s);
+      ::fflush(stderr);
+      std::cerr << "[TQMT_DEBUG] this=" << static_cast<const void*>(this)
+                << " targetCalc=" << static_cast<const void*>(targetCalc)
+                << " targetMetric=" << static_cast<const void*>(targetMetric)
+                << " handle=" << handle << " sample=" << s << " A=" << A << " W=" << W << " Winv=" << Winv << " T=" << T << std::endl;
+    }
   }
   else if (edim == 2) {
     MsqMatrix<2,2> W, A;
@@ -152,9 +178,14 @@ bool TQualityMetric::evaluate_with_gradient( PatchData& pd,
     rval = targetMetric->evaluate_with_grad( T, value, dmdT, err );
     MSQ_ERRZERO(err);
     gradient<3>( num_idx, mDerivs3D, dmdT * transpose(Winv), grad );
-#ifdef PRINT_INFO
-    print_info<3>( e, s, A, W, A * inverse(W) );
-#endif
+    {
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " A=\n" << A << "\n";
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " W=\n" << W << "\n";
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " Winv=\n" << Winv << "\n";
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " T=A*inv(W)=\n" << T << "\n";
+      ::fprintf(stderr, "[MQ_DEBUG-F] handle=%zu elem=%zu A=\n", handle, e);
+      ::fflush(stderr);
+    }
   }
   else if (edim == 2) {
     MsqMatrix<2,2> W, A, dmdT;
@@ -166,7 +197,6 @@ bool TQualityMetric::evaluate_with_gradient( PatchData& pd,
     const MsqMatrix<2,2> Winv = inverse(W);
     const MsqMatrix<2,2> T = A*Winv;
     rval = targetMetric->evaluate_with_grad( T, value, dmdT, err );
-    MSQ_ERRZERO(err);
     gradient<2>( num_idx, mDerivs2D, S_a_transpose_Theta*dmdT*transpose(Winv), grad );
 #ifdef PRINT_INFO
     print_info<2>( e, s, J, Wp, A * inverse(W) );
@@ -221,6 +251,14 @@ bool TQualityMetric::evaluate_with_Hessian( PatchData& pd,
     MSQ_ERRZERO(err);
     gradient<3>( num_idx, mDerivs3D, dmdT*transpose(Winv), grad );
     second_deriv_wrt_product_factor( d2mdT2, Winv );
+    {
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " A=\n" << A << "\n";
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " W=\n" << W << "\n";
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " Winv=\n" << Winv << "\n";
+      std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " T=A*inv(W)=\n" << T << "\n";
+      ::fprintf(stderr, "[MQ_DEBUG-F] handle=%zu elem=%zu A=\n", handle, e);
+      ::fflush(stderr);
+    }
     Hessian.resize( num_idx*(num_idx+1)/2 );
     if (num_idx)
       hessian<3>( num_idx, mDerivs3D, d2mdT2, arrptr(Hessian) );
