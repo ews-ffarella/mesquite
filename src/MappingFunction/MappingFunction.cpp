@@ -207,14 +207,39 @@ void MappingFunction3D::jacobian( const PatchData& pd,
   
   derivatives( location, nodeset, vertex_patch_indices_out,
                d_coeff_d_xi_out, num_vtx_out, err ); MSQ_ERRRTN(err);
- 
+
+  // Optional debug tracing to help align mapping-function vertex ordering
+  // with coordinate-derived constructions elsewhere (guarded by env var).
+  if (std::getenv("ABL_MF_DEBUG")) {
+    std::cerr << "[MappingFunction::jacobian DEBUG] elem=" << element_number
+              << " pre-convert num_vtx_out=" << num_vtx_out << " indices:";
+    for (size_t r = 0; r < num_vtx_out; ++r) std::cerr << ' ' << vertex_patch_indices_out[r];
+    std::cerr << "\n";
+    for (size_t r = 0; r < num_vtx_out; ++r) {
+      std::cerr << "  deriv[" << r << "] = (" << d_coeff_d_xi_out[r][0]
+                << ", " << d_coeff_d_xi_out[r][1] << ", " << d_coeff_d_xi_out[r][2]
+                << ")\n";
+    }
+  }
+
   convert_connectivity_indices( elem.node_count(), vertex_patch_indices_out, 
                                 num_vtx_out, err );  MSQ_ERRRTN(err);
+
+  if (std::getenv("ABL_MF_DEBUG")) {
+    std::cerr << "[MappingFunction::jacobian DEBUG] elem=" << element_number
+              << " post-convert num_vtx_out=" << num_vtx_out << " indices:";
+    for (size_t r = 0; r < num_vtx_out; ++r) std::cerr << ' ' << vertex_patch_indices_out[r];
+    std::cerr << "\n";
+  }
  
   jacobian_out.zero();
   size_t w = 0;
   for (size_t r = 0; r < num_vtx_out; ++r) {
     size_t i = conn[vertex_patch_indices_out[r]];
+    if (std::getenv("ABL_MF_DEBUG")) {
+      std::cerr << "[MappingFunction::jacobian DEBUG] r=" << r << " vertex_patch_idx="
+                << vertex_patch_indices_out[r] << " conn[i]=" << i << "\n";
+    }
     MsqMatrix<3,1> coords( pd.vertex_by_index( i ).to_array() );
     jacobian_out += coords * transpose(d_coeff_d_xi_out[r]);
     if (i < pd.num_free_vertices()) {

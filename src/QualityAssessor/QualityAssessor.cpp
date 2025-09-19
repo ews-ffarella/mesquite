@@ -54,6 +54,8 @@
 #include <iomanip>
 #include <set>
 #include <math.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
@@ -481,6 +483,10 @@ double QualityAssessor::loop_over_mesh_internal( MeshDomainAssoc* mesh_and_domai
   MeshDomain* domain = mesh_and_domain->get_domain();
   invalid_values = false;
 
+  if (getenv("ABL_PRISM_QA_TRACE")) {
+    std::cerr << "[QA_TRACE] loop_over_mesh_internal mesh_ptr=" << (uintptr_t)mesh << std::endl;
+  }
+
   PatchData patch;
   patch.set_mesh( mesh );
   patch.set_domain( domain );
@@ -654,11 +660,29 @@ double QualityAssessor::loop_over_mesh_internal( MeshDomainAssoc* mesh_and_domai
             (*iter)->add_value(value);
             if (!valid) 
               (*iter)->add_invalid_value();
+
+            // Debug: trace per-sample evaluation when requested
+            if (getenv("ABL_PRISM_QA_TRACE")) {
+              Mesh::ElementHandle h = patch.get_element_handles_array()[0];
+              uint64_t sample_idx_val = static_cast<uint64_t>(*j);
+              std::cerr << "[QA_TRACE] elem_handle=" << (uintptr_t)h
+                        << " sample_idx_dec=" << sample_idx_val
+                        << " sample_idx_hex=0x" << std::hex << sample_idx_val << std::dec
+                        << " metric_val=" << value
+                        << " valid=" << valid
+                        << " tagName=" << ((!(*iter)->tagName.empty()) ? (*iter)->tagName : std::string("<none>"))
+                        << std::endl;
+            }
           }
             // we don't do tag stuff unless metric is truely element-based
             // (only one value per element)
           if ((*iter)->write_to_tag() && metric_handles.size() == 1) {
             Mesh::ElementHandle h = patch.get_element_handles_array()[0];
+            if (getenv("ABL_PRISM_QA_TRACE")) {
+              std::cerr << "[QA_TRACE] tag_set_element_data elem_handle=" << (uintptr_t)h
+                        << " tag=" << ((!(*iter)->tagName.empty()) ? (*iter)->tagName : std::string("<none>"))
+                        << " value=" << value << std::endl;
+            }
             mesh->tag_set_element_data( (*iter)->tagHandle, 1, &h, &value, err ); MSQ_ERRZERO(err);
           }
         }
@@ -739,6 +763,11 @@ double QualityAssessor::loop_over_mesh_internal( MeshDomainAssoc* mesh_and_domai
               // we don't do tag stuff unless metric is truely vertex-based
               // (only one value per vertex)
             if ((*iter)->write_to_tag() && metric_handles.size() == 1) {
+              if (getenv("ABL_PRISM_QA_TRACE")) {
+                std::cerr << "[QA_TRACE] tag_set_vertex_data vert_handle=" << (uintptr_t)vert_handle
+                          << " tag=" << ((!(*iter)->tagName.empty()) ? (*iter)->tagName : std::string("<none>"))
+                          << " value=" << value << std::endl;
+              }
               mesh->tag_set_vertex_data( (*iter)->tagHandle, 1, &vert_handle, &value, err ); MSQ_ERRZERO(err);
             }
           }
