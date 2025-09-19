@@ -95,7 +95,7 @@ bool TQualityMetric::evaluate_internal( PatchData& pd,
     const MsqMatrix<3,3> T = A*Winv;
     rval = targetMetric->evaluate( T, value, err ); MSQ_ERRZERO(err);
     // Runtime-controlled debug prints (set environment variable ABL_MQ_DEBUG)
-    {
+    if (std::getenv("ABL_MQ_DEBUG")) {
       std::cerr << "[MQ_DEBUG] this=" << static_cast<const void*>(this)
                 << " targetCalc=" << static_cast<const void*>(targetCalc)
                 << " targetMetric=" << static_cast<const void*>(targetMetric)
@@ -184,7 +184,7 @@ bool TQualityMetric::evaluate_with_gradient( PatchData& pd,
     rval = targetMetric->evaluate_with_grad( T, value, dmdT, err );
     MSQ_ERRZERO(err);
     gradient<3>( num_idx, mDerivs3D, dmdT * transpose(Winv), grad );
-    {
+    if (std::getenv("ABL_MQ_DEBUG")) {
       std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " A=\n" << A << "\n";
       std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " W=\n" << W << "\n";
       std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " Winv=\n" << Winv << "\n";
@@ -257,7 +257,7 @@ bool TQualityMetric::evaluate_with_Hessian( PatchData& pd,
     MSQ_ERRZERO(err);
     gradient<3>( num_idx, mDerivs3D, dmdT*transpose(Winv), grad );
     second_deriv_wrt_product_factor( d2mdT2, Winv );
-    {
+    if (std::getenv("ABL_MQ_DEBUG")) {
       std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " A=\n" << A << "\n";
       std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " W=\n" << W << "\n";
       std::cerr << "[MQ_DEBUG] handle=" << handle << " elem=" << e << " Winv=\n" << Winv << "\n";

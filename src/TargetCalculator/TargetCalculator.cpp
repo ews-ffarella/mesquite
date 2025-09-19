@@ -544,8 +544,8 @@ void TargetCalculator::jacobian_3D( PatchData& pd,
      canonical node ordering) to the ordering of the coords[] array passed
      into this function.  This mirrors the behavior used in the
      MappingFunction::jacobian / JacobianCalculator implementations. */
-  // FIXME: EWS Edit (removed)
-  // mf->convert_connectivity_indices( num_nodes, indices, n, err ); MSQ_ERRRTN(err);
+  // FIXME: EWS Edit (removed) - RESTORED: This is essential for correct vertex ordering!
+  mf->convert_connectivity_indices( num_nodes, indices, n, err ); MSQ_ERRRTN(err);
 
   // Env-gated tracing: print coords[], converted indices and derivs so we can
   // verify the mapping between coords[] ordering and mapping-function indices
